@@ -13,13 +13,22 @@ class Transacao(ABC):
 class ContaCorrente():
     _limite : float = 500
     _limite_saque : int = 3
+    @property
+    def limite(self):
+        return self._limite
+    @property
+    def limite_saque(self):
+        return self._limite_saque
+    @limite_saque.setter
+    def limite_saque(self,value):
+        self._limite_saque = self._limite_saque + value
 class Conta(Transacao):
     def __init__(self,cliente, conta):
         self._cliente = cliente
         self._conta = conta
         self._saldo : float = 0
         self._agencia : str = "000"
-        self._historico : dict = {}
+        self._historico : list = []
         self._Conta_Corrente : object = ContaCorrente()
     @property
     def conta(self):
@@ -30,23 +39,67 @@ class Conta(Transacao):
     @property
     def saldo(self):
         return self._saldo
+    @property
+    def conta_corrente_limite(self):
+        return self._Conta_Corrente.limite
+    @property
+    def conta_corrente_limite_saque(self):
+        return self._Conta_Corrente.limite_saque
+    @property
+    def historico(self):
+        return self._historico.copy()
+    @historico.setter
+    def historico(self,value : dict):
+        self._historico.append(value)
+    @conta_corrente_limite_saque.setter
+    def conta_corrente_limite_saque(self,value):
+        self._Conta_Corrente.limite_saque = value
     @saldo.setter
     def saldo(self,value):
         self._saldo = value
-    @saldo.deleter
-    def saldo(self):
-        pass
     def sacar(self,valor):
-        return super().sacar(self,valor)
+        saldo_atual = self.saldo
+        if valor > saldo_atual:
+            return False
+        elif valor > self.conta_corrente_limite:
+            print("Insira um número menor que o limite por saque.")
+            return False
+        elif self.conta_corrente_limite_saque <= 0:
+            print("Número de saques diários excedidos.")
+            return False
+        else:
+            self.saldo = saldo_atual - valor
+            self.conta_corrente_limite_saque = -1
+            self.registrar_transacao("saque",self.saldo)
+            return True
     def depositar(self,valor):
         saldo_atual = self.saldo
         if valor >0:
             self.saldo = saldo_atual + valor
+            self.registrar_transacao("depósito",self.saldo)
             return True
         else:
             return False
-    def adcionar_transacao():
-        pass
+    def registrar_transacao(self,tipo,valor):
+        self.historico = {"tipo":tipo,"valor":valor}
+        print(self.historico)
+    def exibir_historico(self):
+        historico = self.historico
+
+        if not historico:
+            print("\nNenhuma movimentação registrada.")
+
+        print("\n╔══════════════════════════════════════╗")
+        print("║       🧾 EXTRATO DA CONTA BANCÁRIA       ║")
+        print("╚══════════════════════════════════════╝")
+
+        for transacao in historico:
+            tipo = transacao["tipo"]
+            valor = transacao["valor"]
+            if tipo == "depósito":
+                print(f" + R$ {valor:.2f}")
+            else:
+                print(f" - R$ {valor:.2f}")
 class Pessoa_fisica():
     def __init__(self,nome,cpf,data_nascimento,senha):
         self._nome = nome
@@ -61,8 +114,11 @@ class Pessoa_fisica():
     @property
     def cliente(self):
         return self._cliente
+    @property
+    def senha(self):
+        return self._senha
     def verifica_senha(self,senha):
-        return senha == self._senha
+        return senha == self.senha
 class Cliente():
     def __init__(self):
         self._contas = []
@@ -77,8 +133,6 @@ class Cliente():
         contas_criadas += 1
         nova_conta = Conta(self, contas_criadas)
         self.contas = nova_conta
-"""def realizar_transacao(self,conta : int, transacao : str):
-        pass"""
 def verifica_senha(usuario,senha):
     return usuario.verifica_senha(senha)
 def encontrar_usuario(cpf):
@@ -119,8 +173,12 @@ def criar_pessoa_fisica():
     print("Sua conta foi criada!")
 def lista_contas(cliente):
     contas = cliente.contas
+    if not contas:
+        print("Nenhuma conta encontrada.")
+        return False
     for i, conta in enumerate(contas):
         print(f"[{i}] Agência: {conta.agencia} | Conta: {conta.conta}")
+    return True
 def solicita_conta(usuario):
     usuario.cliente.criar_conta()
     lista_contas(usuario.cliente)
@@ -129,7 +187,9 @@ def solicita_deposito(usuario):
     if not verifica_senha(usuario,senha):
         print("Senha incorreta.")
         return
-    lista_contas(usuario.cliente)
+    contas = lista_contas(usuario.cliente)
+    if not contas:
+        return
     conta_idx = int(input("Selecione uma das contas acima: "))
     valor = int(input("Digite o valor que deseja depositar: "))
     conta_selecionada = usuario.cliente.contas[conta_idx]
@@ -138,7 +198,31 @@ def solicita_deposito(usuario):
         print(f"Saldo atual: {conta_selecionada.saldo}")
     else:
         print("Erro no depósito.")
-
+def solicita_saque(usuario):
+    senha = input("Digite sua senha para continuar: ")
+    if not verifica_senha(usuario,senha):
+        print("Senha incorreta.")
+        return
+    contas = lista_contas(usuario.cliente)
+    if not contas:
+        return
+    conta_idx = int(input("Selecione uma das contas acima: "))
+    valor = int(input("Digite o valor que deseja sacar: "))
+    conta_selecionada = usuario.cliente.contas[conta_idx]
+    if conta_selecionada.sacar(valor):
+        print("Saque efetuado com sucesso!")
+        print(f"Saldo atual: {conta_selecionada.saldo}")
+    else:
+        print("Erro no saque.")
+def solicita_historico(usuario):
+    senha = input("Digite sua senha para continuar: ")
+    if not verifica_senha(usuario,senha):
+        print("Senha incorreta.")
+        return
+    if not lista_contas(usuario.cliente):
+        return
+    conta_idx = int(input("Selecione uma de suas contas que deseja visualizar o histórico: "))
+    usuario.cliente.contas[conta_idx].exibir_historico()
 # LOOP PRINCIPAL
 menu_inicial = """
 [c] Cadastrar
@@ -170,14 +254,14 @@ while True:
         if opcao == "d":
             solicita_deposito(usuario_conectado)
         elif opcao == "s":
-            pass
+            solicita_saque(usuario_conectado)
         elif opcao == "e":
-            pass
+            solicita_historico(usuario_conectado)
         elif opcao == "c":
             solicita_conta(usuario_conectado)
         elif opcao == "q":
-            pass
+            usuario_conectado = None
         else:
-            pass
+            print("Opção inválida.")
 
 
