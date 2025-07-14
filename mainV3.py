@@ -1,5 +1,6 @@
 from abc import ABC,abstractmethod
-# TODO: Add classes para cliente e operações bancarias, armazenar dados dos clientes em objetos
+# TODO: Transformar os métodos de Classe de ContaCorrente em métodos de Instância;
+
 usuario_conectado = False
 pessoas_fisicas = []
 contas_criadas = 0
@@ -21,7 +22,7 @@ class ContaCorrente():
         return self._limite_saque
     @limite_saque.setter
     def limite_saque(self,value):
-        self._limite_saque = self._limite_saque + value
+        self._limite_saque = self.limite_saque + value
 class Conta(Transacao):
     def __init__(self,cliente, conta):
         self._cliente = cliente
@@ -223,6 +224,8 @@ def solicita_historico(usuario):
         return
     conta_idx = int(input("Selecione uma de suas contas que deseja visualizar o histórico: "))
     usuario.cliente.contas[conta_idx].exibir_historico()
+
+#TODO Encapsular o LOOP em uma função main()
 # LOOP PRINCIPAL
 menu_inicial = """
 [c] Cadastrar
