@@ -1,5 +1,4 @@
 from abc import ABC,abstractmethod
-# TODO: Transformar os métodos de Classe de ContaCorrente em métodos de Instância;
 
 usuario_conectado = False
 pessoas_fisicas = []
@@ -222,8 +221,6 @@ def solicita_historico(usuario):
     conta_idx = int(input("Selecione uma de suas contas que deseja visualizar o histórico: "))
     usuario.contas[conta_idx].exibir_historico()
 
-#TODO Encapsular o LOOP em uma função main()
-# LOOP PRINCIPAL
 def main():
     global usuario_conectado
     menu_inicial = """
