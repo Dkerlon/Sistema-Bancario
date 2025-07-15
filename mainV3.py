@@ -117,18 +117,15 @@ class Cliente():
         self.contas = nova_conta
 class Pessoa_fisica(Cliente):
     def __init__(self,nome,cpf,data_nascimento,senha):
+        super().__init__()
         self._nome = nome
         self._cpf = cpf
         self._data_nascimento = data_nascimento
         self._senha = senha
         self._endereco = None
-        self._contas = []
     @property
     def cpf(self):
         return self._cpf
-    @property
-    def cliente(self):
-        return self._cliente
     @property
     def senha(self):
         return self._senha

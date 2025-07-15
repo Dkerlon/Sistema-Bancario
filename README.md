@@ -36,7 +36,7 @@ Este projeto é uma simulação de um sistema bancário simples, desenvolvido co
 ## 📌 Próximos Passos
 - [ ] Validação de entradas de dados
 - [ ] Dividir o código em módulos
-- [ ] ###
+- [ ] Encapsular a variável CONTAS_CRIADAS como método de classe da classe Conta
 - [ ] ###
 
 ---
