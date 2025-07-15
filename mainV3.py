@@ -12,8 +12,9 @@ class Transacao(ABC):
     def depositar(self,valor):
         pass
 class ContaCorrente():
-    _limite : float = 500
-    _limite_saque : int = 3
+    def __init__(self,limite=500,limite_saque=3):
+        self._limite = limite 
+        self._limite_saque = limite_saque
     @property
     def limite(self):
         return self._limite
@@ -30,7 +31,7 @@ class Conta(Transacao):
         self._saldo : float = 0
         self._agencia : str = "000"
         self._historico : list = []
-        self._Conta_Corrente : object = ContaCorrente()
+        self._conta_corrente : object = ContaCorrente()
     @property
     def conta(self):
         return self._conta
@@ -42,10 +43,10 @@ class Conta(Transacao):
         return self._saldo
     @property
     def conta_corrente_limite(self):
-        return self._Conta_Corrente.limite
+        return self._conta_corrente.limite
     @property
     def conta_corrente_limite_saque(self):
-        return self._Conta_Corrente.limite_saque
+        return self._conta_corrente.limite_saque
     @property
     def historico(self):
         return self._historico.copy()
@@ -54,7 +55,7 @@ class Conta(Transacao):
         self._historico.append(value)
     @conta_corrente_limite_saque.setter
     def conta_corrente_limite_saque(self,value):
-        self._Conta_Corrente.limite_saque = value
+        self._conta_corrente.limite_saque = value
     @saldo.setter
     def saldo(self,value):
         self._saldo = value
@@ -83,7 +84,6 @@ class Conta(Transacao):
             return False
     def registrar_transacao(self,tipo,valor):
         self.historico = {"tipo":tipo,"valor":valor}
-        print(self.historico)
     def exibir_historico(self):
         historico = self.historico
 
@@ -101,25 +101,6 @@ class Conta(Transacao):
                 print(f" + R$ {valor:.2f}")
             else:
                 print(f" - R$ {valor:.2f}")
-class Pessoa_fisica():
-    def __init__(self,nome,cpf,data_nascimento,senha):
-        self._nome = nome
-        self._cpf = cpf
-        self._data_nascimento = data_nascimento
-        self._senha = senha
-        self._endereco = None
-        self._cliente = Cliente()
-    @property
-    def cpf(self):
-        return self._cpf
-    @property
-    def cliente(self):
-        return self._cliente
-    @property
-    def senha(self):
-        return self._senha
-    def verifica_senha(self,senha):
-        return senha == self.senha
 class Cliente():
     def __init__(self):
         self._contas = []
@@ -134,6 +115,25 @@ class Cliente():
         contas_criadas += 1
         nova_conta = Conta(self, contas_criadas)
         self.contas = nova_conta
+class Pessoa_fisica(Cliente):
+    def __init__(self,nome,cpf,data_nascimento,senha):
+        self._nome = nome
+        self._cpf = cpf
+        self._data_nascimento = data_nascimento
+        self._senha = senha
+        self._endereco = None
+        self._contas = []
+    @property
+    def cpf(self):
+        return self._cpf
+    @property
+    def cliente(self):
+        return self._cliente
+    @property
+    def senha(self):
+        return self._senha
+    def verifica_senha(self,senha):
+        return senha == self.senha
 def verifica_senha(usuario,senha):
     return usuario.verifica_senha(senha)
 def encontrar_usuario(cpf):
@@ -181,19 +181,19 @@ def lista_contas(cliente):
         print(f"[{i}] Agência: {conta.agencia} | Conta: {conta.conta}")
     return True
 def solicita_conta(usuario):
-    usuario.cliente.criar_conta()
-    lista_contas(usuario.cliente)
+    usuario.criar_conta()
+    lista_contas(usuario)
 def solicita_deposito(usuario):
     senha = input("Digite sua senha para continuar: ")
     if not verifica_senha(usuario,senha):
         print("Senha incorreta.")
         return
-    contas = lista_contas(usuario.cliente)
+    contas = lista_contas(usuario)
     if not contas:
         return
     conta_idx = int(input("Selecione uma das contas acima: "))
     valor = int(input("Digite o valor que deseja depositar: "))
-    conta_selecionada = usuario.cliente.contas[conta_idx]
+    conta_selecionada = usuario.contas[conta_idx]
     if conta_selecionada.depositar(valor):
         print("Depósito efetuado com sucesso!")
         print(f"Saldo atual: {conta_selecionada.saldo}")
@@ -204,12 +204,12 @@ def solicita_saque(usuario):
     if not verifica_senha(usuario,senha):
         print("Senha incorreta.")
         return
-    contas = lista_contas(usuario.cliente)
+    contas = lista_contas(usuario)
     if not contas:
         return
     conta_idx = int(input("Selecione uma das contas acima: "))
     valor = int(input("Digite o valor que deseja sacar: "))
-    conta_selecionada = usuario.cliente.contas[conta_idx]
+    conta_selecionada = usuario.contas[conta_idx]
     if conta_selecionada.sacar(valor):
         print("Saque efetuado com sucesso!")
         print(f"Saldo atual: {conta_selecionada.saldo}")
@@ -220,51 +220,52 @@ def solicita_historico(usuario):
     if not verifica_senha(usuario,senha):
         print("Senha incorreta.")
         return
-    if not lista_contas(usuario.cliente):
+    if not lista_contas(usuario):
         return
     conta_idx = int(input("Selecione uma de suas contas que deseja visualizar o histórico: "))
-    usuario.cliente.contas[conta_idx].exibir_historico()
+    usuario.contas[conta_idx].exibir_historico()
 
 #TODO Encapsular o LOOP em uma função main()
 # LOOP PRINCIPAL
-menu_inicial = """
+def main():
+    global usuario_conectado
+    menu_inicial = """
 [c] Cadastrar
 [e] Entrar
 [q] Sair
-=> """
+=>"""
 
-menu_principal = """
+    menu_principal = """
 [d] Depositar
 [s] Sacar
 [e] Extrato
 [c] Criar nova conta
 [q] Sair
 => """
-while True:
-    if not usuario_conectado:
-        opcao = input(menu_inicial)
-        if opcao == "c":
-            criar_pessoa_fisica()
-        elif opcao == "e":
-            login()
-        elif opcao == "q":
-            print("Saindo...")
-            break
+    while True:
+        if not usuario_conectado:
+            opcao = input(menu_inicial)
+            if opcao == "c":
+                criar_pessoa_fisica()
+            elif opcao == "e":
+                login()
+            elif opcao == "q":
+                print("Saindo...")
+                break
+            else:
+                print("Opção inválida.")
         else:
-            print("Opção inválida.")
-    else:
-        opcao = input(menu_principal)
-        if opcao == "d":
-            solicita_deposito(usuario_conectado)
-        elif opcao == "s":
-            solicita_saque(usuario_conectado)
-        elif opcao == "e":
-            solicita_historico(usuario_conectado)
-        elif opcao == "c":
-            solicita_conta(usuario_conectado)
-        elif opcao == "q":
-            usuario_conectado = None
-        else:
-            print("Opção inválida.")
-
-
+            opcao = input(menu_principal)
+            if opcao == "d":
+                solicita_deposito(usuario_conectado)
+            elif opcao == "s":
+                solicita_saque(usuario_conectado)
+            elif opcao == "e":
+                solicita_historico(usuario_conectado)
+            elif opcao == "c":
+                solicita_conta(usuario_conectado)
+            elif opcao == "q":
+                usuario_conectado = None
+            else:
+                print("Opção inválida.")
+main()
