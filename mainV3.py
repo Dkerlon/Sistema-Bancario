@@ -1,8 +1,27 @@
 from abc import ABC,abstractmethod
-
+import datetime
 usuario_conectado = False
 pessoas_fisicas = []
 contas_criadas = 0
+def decorador_log(funcao):
+    def envelope(*args,**kwargs):
+        print(f"\n{"=".center(40,"=")}\nDia:{datetime.datetime.now().day} | Hora: {datetime.datetime.now().hour}")
+        print(f"{"=".center(40,"=")}")
+        funcao(*args,**kwargs)
+    return envelope
+class ContaIterador:
+    def __init__(self,contas:list[object]):
+        self.contas = contas
+        self.contador = 0
+    def __iter__(self):
+        return self
+    def __next__(self):
+        try:
+            head = self.contador
+            self.contador+=1
+            return self.contas[head]
+        except IndexError:
+            raise StopIteration
 class Transacao(ABC):
     @abstractmethod
     def sacar(self,valor):
@@ -71,13 +90,13 @@ class Conta(Transacao):
         else:
             self.saldo = saldo_atual - valor
             self.conta_corrente_limite_saque = -1
-            self.registrar_transacao("saque",self.saldo)
+            self.registrar_transacao("saque",valor)
             return True
     def depositar(self,valor):
         saldo_atual = self.saldo
         if valor >0:
             self.saldo = saldo_atual + valor
-            self.registrar_transacao("depósito",self.saldo)
+            self.registrar_transacao("depósito",valor)
             return True
         else:
             return False
@@ -85,21 +104,8 @@ class Conta(Transacao):
         self.historico = {"tipo":tipo,"valor":valor}
     def exibir_historico(self):
         historico = self.historico
-
-        if not historico:
-            print("\nNenhuma movimentação registrada.")
-
-        print("\n╔══════════════════════════════════════╗")
-        print("║       🧾 EXTRATO DA CONTA BANCÁRIA       ║")
-        print("╚══════════════════════════════════════╝")
-
         for transacao in historico:
-            tipo = transacao["tipo"]
-            valor = transacao["valor"]
-            if tipo == "depósito":
-                print(f" + R$ {valor:.2f}")
-            else:
-                print(f" - R$ {valor:.2f}")
+            yield transacao
 class Cliente():
     def __init__(self):
         self._contas = []
@@ -109,6 +115,7 @@ class Cliente():
     @contas.setter
     def contas(self,nova_conta):
         self._contas.append(nova_conta)
+    @decorador_log
     def criar_conta(self):
         global contas_criadas
         contas_criadas += 1
@@ -169,16 +176,16 @@ def criar_pessoa_fisica():
 
     print("Sua conta foi criada!")
 def lista_contas(cliente):
-    contas = cliente.contas
-    if not contas:
+    if not cliente.contas:
         print("Nenhuma conta encontrada.")
         return False
-    for i, conta in enumerate(contas):
+    for i, conta in enumerate(ContaIterador(cliente.contas)):
         print(f"[{i}] Agência: {conta.agencia} | Conta: {conta.conta}")
     return True
 def solicita_conta(usuario):
     usuario.criar_conta()
     lista_contas(usuario)
+@decorador_log
 def solicita_deposito(usuario):
     senha = input("Digite sua senha para continuar: ")
     if not verifica_senha(usuario,senha):
@@ -195,6 +202,7 @@ def solicita_deposito(usuario):
         print(f"Saldo atual: {conta_selecionada.saldo}")
     else:
         print("Erro no depósito.")
+@decorador_log
 def solicita_saque(usuario):
     senha = input("Digite sua senha para continuar: ")
     if not verifica_senha(usuario,senha):
@@ -219,7 +227,37 @@ def solicita_historico(usuario):
     if not lista_contas(usuario):
         return
     conta_idx = int(input("Selecione uma de suas contas que deseja visualizar o histórico: "))
-    usuario.contas[conta_idx].exibir_historico()
+    historico = usuario.contas[conta_idx].exibir_historico()
+    if not historico:
+        print("\nNenhuma movimentação registrada.")
+    menu_tipo = input("""\n\nSelecione o tipo de transação para ser exibida\n
+[d]Depósito
+[s]Saque
+[t]Todos
+=>""")
+    print("\n╔══════════════════════════════════════╗")
+    print("║       🧾 EXTRATO DA CONTA BANCÁRIA       ║")
+    print("╚══════════════════════════════════════╝")
+    if menu_tipo == "s":
+        for transacao in historico:
+            tipo = transacao["tipo"]
+            valor = transacao["valor"]
+            if tipo == "saque":
+                print(f" - R$ {valor:.2f}")
+    elif menu_tipo == "d":
+        for transacao in historico:
+            tipo = transacao["tipo"]
+            valor = transacao["valor"]
+            if tipo == "depósito":
+                print(f" + R$ {valor:.2f}")
+    else:    
+        for transacao in historico:
+            tipo = transacao["tipo"]
+            valor = transacao["valor"]
+            if tipo == "depósito":
+                print(f" + R$ {valor:.2f}")
+            else:
+                print(f" - R$ {valor:.2f}")
 
 def main():
     global usuario_conectado
