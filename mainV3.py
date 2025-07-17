@@ -59,6 +59,7 @@ class Conta(Transacao):
     @property
     def conta_corrente_limite(self):
         return self._conta_corrente.limite  
+    @property
     def conta_corrente_limite_saque(self):
         return self._conta_corrente.limite_saque
     @property
