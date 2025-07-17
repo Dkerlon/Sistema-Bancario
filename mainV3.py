@@ -39,9 +39,6 @@ class ContaCorrente():
     @property
     def limite_saque(self):
         return self._limite_saque
-    @limite_saque.setter
-    def limite_saque(self,value):
-        self._limite_saque = self.limite_saque + value
 class Conta(Transacao):
     def __init__(self,cliente, conta):
         self._cliente = cliente
@@ -61,35 +58,33 @@ class Conta(Transacao):
         return self._saldo
     @property
     def conta_corrente_limite(self):
-        return self._conta_corrente.limite
-    @property
-    def conta_corrente_limite_saque(self):
-        return self._conta_corrente.limite_saque
+        return self._conta_corrente.limite  
     @property
     def historico(self):
         return self._historico.copy()
     @historico.setter
     def historico(self,value : dict):
         self._historico.append(value)
-    @conta_corrente_limite_saque.setter
-    def conta_corrente_limite_saque(self,value):
-        self._conta_corrente.limite_saque = value
     @saldo.setter
     def saldo(self,value):
         self._saldo = value
     def sacar(self,valor):
+        hoje = datetime.date.today()
+        saques_hoje = sum(
+        1 for t in self._historico
+        if t["tipo"] == "saque" and t["data"].date() == hoje
+        )
         saldo_atual = self.saldo
+        if saques_hoje >= 10:
+            print("Limite de 10 saques diários atingido.")
+            return False
         if valor > saldo_atual:
             return False
         elif valor > self.conta_corrente_limite:
             print("Insira um número menor que o limite por saque.")
             return False
-        elif self.conta_corrente_limite_saque <= 0:
-            print("Número de saques diários excedidos.")
-            return False
         else:
             self.saldo = saldo_atual - valor
-            self.conta_corrente_limite_saque = -1
             self.registrar_transacao("saque",valor)
             return True
     def depositar(self,valor):
@@ -101,7 +96,8 @@ class Conta(Transacao):
         else:
             return False
     def registrar_transacao(self,tipo,valor):
-        self.historico = {"tipo":tipo,"valor":valor}
+        data_hora = datetime.datetime.now()
+        self.historico = {"tipo":tipo,"valor":valor,"data":data_hora}
     def exibir_historico(self):
         historico = self.historico
         for transacao in historico:
@@ -240,24 +236,27 @@ def solicita_historico(usuario):
     print("╚══════════════════════════════════════╝")
     if menu_tipo == "s":
         for transacao in historico:
+            data = transacao["data"].strftime("%d/%m/%Y %H:%M")
             tipo = transacao["tipo"]
             valor = transacao["valor"]
             if tipo == "saque":
-                print(f" - R$ {valor:.2f}")
+                print(f" - R$ {valor:.2f} | {data}")
     elif menu_tipo == "d":
         for transacao in historico:
+            data = transacao["data"].strftime("%d/%m/%Y %H:%M")
             tipo = transacao["tipo"]
             valor = transacao["valor"]
             if tipo == "depósito":
-                print(f" + R$ {valor:.2f}")
+                print(f" + R$ {valor:.2f} | {data}")
     else:    
         for transacao in historico:
+            data = transacao["data"].strftime("%d/%m/%Y %H:%M")
             tipo = transacao["tipo"]
             valor = transacao["valor"]
             if tipo == "depósito":
-                print(f" + R$ {valor:.2f}")
+                print(f" + R$ {valor:.2f} | {data}")
             else:
-                print(f" - R$ {valor:.2f}")
+                print(f" - R$ {valor:.2f} | {data}")
 
 def main():
     global usuario_conectado
