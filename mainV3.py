@@ -59,6 +59,8 @@ class Conta(Transacao):
     @property
     def conta_corrente_limite(self):
         return self._conta_corrente.limite  
+    def conta_corrente_limite_saque(self):
+        return self._conta_corrente.limite_saque
     @property
     def historico(self):
         return self._historico.copy()
@@ -75,8 +77,8 @@ class Conta(Transacao):
         if t["tipo"] == "saque" and t["data"].date() == hoje
         )
         saldo_atual = self.saldo
-        if saques_hoje >= 10:
-            print("Limite de 10 saques diários atingido.")
+        if saques_hoje >= self.conta_corrente_limite_saque:
+            print(f"Limite de {self.conta_corrente_limite_saque} saques diários atingido.")
             return False
         if valor > saldo_atual:
             return False
