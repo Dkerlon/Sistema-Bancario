@@ -1,0 +1,3 @@
+DATA,FUNC,ARG_FUNC,RESULT FUNC
+2025-07-18 17:25:38.111361,criar_conta,['123 - CPF: 123'],nenhum retorno
+2025-07-18 17:25:43.813907,solicita_deposito,['123 - CPF: 123'],nenhum retorno

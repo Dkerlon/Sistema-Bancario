@@ -1,13 +1,26 @@
 from abc import ABC,abstractmethod
 import datetime
+from pathlib import Path
+import os
+import csv
+ROOTPATH = Path(__file__).parent
 usuario_conectado = False
 pessoas_fisicas = []
 contas_criadas = 0
 def decorador_log(funcao):
     def envelope(*args,**kwargs):
-        print(f"\n{"=".center(40,"=")}\nDia:{datetime.datetime.now().day} | Hora: {datetime.datetime.now().hour}")
-        print(f"{"=".center(40,"=")}")
-        funcao(*args,**kwargs)
+        resultado = funcao(*args,**kwargs)
+        data = datetime.datetime.today()
+        try:
+            if not os.path.exists(ROOTPATH / "log.csv"):
+                with open("log.csv","w",encoding='utf-8',newline="") as arquivo:
+                    writer = csv.writer(arquivo)
+                    writer.writerow(["DATA","FUNC","ARG_FUNC","RESULT FUNC"])
+            with open(ROOTPATH  / "log.csv","a", encoding="utf-8",newline="") as arquivo:
+                writer = csv.writer(arquivo)
+                writer.writerow([data,funcao.__name__,[str(arg) for arg in args] or "Nenhum argumento",resultado or "nenhum retorno"])
+        except Exception as ewc: 
+            print(ewc)
     return envelope
 class ContaIterador:
     def __init__(self,contas:list[object]):
@@ -132,8 +145,15 @@ class Pessoa_fisica(Cliente):
     def cpf(self):
         return self._cpf
     @property
+    def nome(self):
+        return self._nome
+    @property
     def senha(self):
         return self._senha
+    def __str__(self):
+        return f"Nome: {self.nome} - CPF: {self.cpf}"
+    def __repr__(self):
+        return self.__str__()
     def verifica_senha(self,senha):
         return senha == self.senha
 def verifica_senha(usuario,senha):
