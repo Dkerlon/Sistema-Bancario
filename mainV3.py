@@ -19,8 +19,17 @@ def decorador_log(funcao):
             with open(ROOTPATH  / "log.csv","a", encoding="utf-8",newline="") as arquivo:
                 writer = csv.writer(arquivo)
                 writer.writerow([data,funcao.__name__,[str(arg) for arg in args] or "Nenhum argumento",resultado or "nenhum retorno"])
-        except Exception as ewc: 
-            print(ewc)
+        except FileNotFoundError as exc: 
+            print("Arquivo não encontrado.")
+            print(exc)
+        except IOError as exc: 
+            print("Erro ao abrir o arquivo.")
+            print(exc)
+        except PermissionError as exc: 
+            print("O Usuário não tem permissão para acessar o arquivo")
+            print(exc)
+        except Exception as exc:
+            print(exc)
     return envelope
 class ContaIterador:
     def __init__(self,contas:list[object]):
